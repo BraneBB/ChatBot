@@ -1,0 +1,76 @@
+{ "testset": 
+        [
+        {"tag": "greeting",
+         "patterns": ["Hello and good morning.",
+         "Hi there.",
+         "Howdy my friend.",
+         "Salutations to you robot.",
+         "Good afternoon there.",
+         "Is anyone there?"]
+        },
+
+        {"tag": "goodbye",
+         "patterns": ["I have to go, so goodbye.",
+         "Gotta run, bye.",
+         "Can't be here anymore, gotta go.",
+         "I have something to do, so I will talk to you later."]
+        },
+
+        {"tag": "weather",
+         "patterns": ["How is outside?",
+         "Is it cold outside?",
+         "What is it like outside?",
+         "Is it hot outside?",
+         "What temperature is it at my location?"]
+        },
+
+        {"tag": "time",
+         "patterns": ["Tell me the time.",
+         "What time is it?",
+         "Can you tell the time?",
+         "What hour is it?"]
+        },
+
+        {"tag": "name",
+         "patterns": ["How do I call you?",
+         "How do you call yourself?",
+        "What is your name?",
+        "What is you denomination?",
+        "How do you identify yourself?"]
+        },
+
+        {"tag": "feelings",
+         "patterns": ["How are you today fellow robot?",
+         "How are you feeling this afternoon?",
+         "How do you feel?",
+         "Are you sad?",
+         "Are hou happy?"]
+        },
+
+        {"tag": "music",
+         "patterns": ["Play me something nice.",
+         "Sing me a song.",
+         "Throw some music out."]
+        },
+
+        {"tag": "jokes",
+         "patterns": ["I am sad, cheer me up with a joke.",
+         "Tell me something funny.",
+         "Make me laugh, I am sad.",
+         "Tell me something funny robot."]
+        },
+
+        {"tag": "creator",
+         "patterns": ["Who created you?",
+         "Who made you?",
+         "What is the name of the person who created you?",
+         "What did you say what is your creators name?"]
+        },
+
+        {"tag": "mathos",
+         "patterns": ["Do you go to college?",
+         "Does Branimir go to college?",
+         "Where does Branimir go to college?"]
+        }
+        ]
+}

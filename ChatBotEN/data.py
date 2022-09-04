@@ -1,70 +1,65 @@
+from os import cpu_count
+from gensim.models import Word2Vec
+import gensim.downloader as api
+from gensim.utils import simple_preprocess
+import numpy as np
 import json
-import nltk
-import numpy
-from nltk.stem import PorterStemmer
+import gensim.downloader
 
-stemmer = PorterStemmer()
-ignore_puncts = ["?", ".", ":", ";", "'", "!", "/", "_", "&"]
+# def word2vecCreate():
+#     dataset = api.load("text8")
+#     data = [d for d in dataset]
+#     data_train = data[:2500]
+#     model = Word2Vec(sentences = data_train, window = 10, min_count = 1, workers = cpu_count(), vector_size = 300) 
+#     model.save("word2vec.model")
 
-def parseInputSentence(sentence):
-    words = nltk.word_tokenize(sentence)
-    words = [stemmer.stem(word.lower()) for word in words if word not in ignore_puncts]
-    return words
+# word2vecCreate()
 
-def dataparser(filename):
+def rawDataToTraining(filename):
+    new_model = gensim.downloader.load('glove-wiki-gigaword-300')
+    # model = Word2Vec.load("word2vec.model").wv
+    training = []
+    tagresponse = {}
+    tags = []
+    docy = []
 
     trainingdata = json.loads(open(f'{filename}.json').read())
-
-    vocabulary = []
-    tags = []
-    docx = []
-    docy = []
-    tagresponse = {}
-
     for sets in trainingdata:
         for data in trainingdata[sets]:
             for pat in data['patterns']:
-                words = parseInputSentence(pat)
-            
-                vocabulary.extend(words)
-            
-                docx.append(words)
+                result = [0] * 300
+                for word in simple_preprocess(pat):
+                    result = np.add(result, new_model[word])
+                
+                training.append(result)
+
                 docy.append(data['tag'])
 
                 if data['tag'] not in tags:
-                    tags.append(data['tag'])
+                        tags.append(data['tag'])
+
         for resp in trainingdata[sets]:
                 if resp['tag'] in tagresponse.keys():
                     tagresponse[resp['tag']].extend(resp['responses'])
                 else:  
                     tagresponse[resp['tag']] = resp['responses']
     
-
-    vocabulary = sorted(set(vocabulary))
     tags = sorted(tags)
-
-    trainingdata = []
     outputdata = []
-
     out_empty = [0] * len(tags)
 
-    data = []
-
-    for cnt, doc in enumerate(docx):
-        bag = []
+    for i in range(len(training)):
+        
         output = out_empty[:]
 
-        for w in vocabulary:
-            if w in doc:
-                bag.append(1)
-            else:
-                bag.append(0)
-
-        trainingdata.append(bag)
-        output[tags.index(docy[cnt])] = 1
+        output[tags.index(docy[i])] = 1
         outputdata.append(output)
-     
-    trainingdata = numpy.array(trainingdata)
-    outputdata = numpy.array(outputdata)
     
-    return vocabulary, tags, trainingdata, outputdata, tagresponse
+
+    training = np.array(training)
+    outputdata = np.array(outputdata)
+
+    
+    return training, outputdata, tags, tagresponse
+
+# rawDataToTraining('data')

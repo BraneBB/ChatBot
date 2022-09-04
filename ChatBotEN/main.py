@@ -5,47 +5,40 @@ import random
 import pickle
 import requests
 from datetime import datetime
-from data import dataparser, parseInputSentence
+import numpy as np
+from data import rawDataToTraining
+from gensim.utils import simple_preprocess
+import gensim.downloader
+import json
 
 tf.compat.v1.reset_default_graph()
 
 try:
-    with open("trainingdata.pickle", "rb") as f:
-        vocabulary, tags, trainingdata, outputdata, tagresponse = pickle.load(f)
+    with open("data.pickle", "rb") as f:
+        training, outputdata, tags, tagresponse = pickle.load(f)
 except:
-    vocabulary, tags, trainingdata, outputdata, tagresponse = dataparser('trainingdata')
+    training, outputdata, tags, tagresponse = rawDataToTraining('data')
     with open("data.pickle", "wb") as f:
-        pickle.dump((vocabulary, tags, trainingdata, outputdata, tagresponse), f)
-
+        pickle.dump((training, outputdata, tags, tagresponse), f)
 
 #input layer
-net = tflearn.input_data(shape = [None, len(trainingdata[0])])
+net = tflearn.input_data(shape = [None, len(training[0])])
 #hidden layers
-net = tflearn.fully_connected(net, 8)
+net = tflearn.fully_connected(net, 16)
 net = tflearn.fully_connected(net, 8)
 #output layers
 net = tflearn.fully_connected(net, len(outputdata[0]), activation = 'softmax')
 #regresija
 net = tflearn.regression(net)
 #odabir modela
-model = tflearn.DNN(net)
+chatbot = tflearn.DNN(net)
 
 try:
-    model.load("ChatBotEN")
+    chatbot.load("ChatBotEN")
 except:
-    model.fit(trainingdata, outputdata, n_epoch = 500, batch_size = 10, show_metric = True)
-    model.save("ChatBotEN")
-#fitanje podataka modelu
-
-def BOW(tokenizedSentence):
-    bag = []
-    for word in vocabulary:
-        if word in tokenizedSentence:
-            bag.append(1)
-        else:
-            bag.append(0)
-    
-    return numpy.array(bag)
+# #fitanje podataka modelu
+    chatbot.fit(X_inputs = training, Y_targets = outputdata, n_epoch = 500, batch_size = 10, show_metric = True)
+    chatbot.save("ChatBotEN")
 
 def Weather():
     apikey = "eaa1ff36c65a8953740ec81b7e9f4666"
@@ -73,19 +66,46 @@ def Weather():
     
     return temp, desc, pressure, hum
 
+def TestMetric(filename):
+    score = 0
+    total = 0
+    new_model = gensim.downloader.load('glove-wiki-gigaword-300')
+    trainingdata = json.loads(open(f'{filename}.json').read())
+    for sets in trainingdata:
+        for data in trainingdata[sets]:
+            for pat in data['patterns']:
+                result = [0] * 300
+                for word in simple_preprocess(pat):
+                    parseword = new_model[word]
+                    result = np.add(result, parseword)
+            
+                result = chatbot.predict([result])[0]
+                result_index = numpy.argmax(result)
+                tag = tags[result_index]
+                total += 1
+                if tag == data['tag']:
+                    score += 1 
+
+    return score / total
 
 def Chat():
+    new_model = gensim.downloader.load('glove-wiki-gigaword-300')
     print("Start talking with the bot! (For quit just type 'quit')")
     while True:
         inputSentence = input("You: ")
         if inputSentence.lower() == "quit":
             break
+        
+        try:
+            result = [0] * 300
+            for word in simple_preprocess(inputSentence):
+                    parseword = new_model[word]
+                    result = np.add(result, parseword)
+            
+            result = chatbot.predict([result])[0]
+            result_index = numpy.argmax(result)
 
-        result = model.predict([BOW(parseInputSentence(inputSentence))])[0]
-        result_index = numpy.argmax(result)
-
-        tag = tags[result_index]
-        if result[result_index] > 0.75:
+            tag = tags[result_index]
             if tag == "time":
                 dtime = datetime.now()
                 print("ChatBot: " + random.choice(tagresponse[tag]) + str(dtime.hour), ':', str(dtime.minute))
@@ -96,6 +116,11 @@ def Chat():
                 print("ChatBot: " + random.choice(tagresponse[tag]) + f"temperature: {round(temp, 2)} ° C, description: {desc}, pressure : {pressure} mb, humidity: {hum}%")
             else:
                 print("ChatBot: " + random.choice(tagresponse[tag]))
-        else:
-            print("ChatBot: Sorry I didn't understand that, try typing something else.")
+        except:
+                print("ChatBot: Sorry I didn't understand that, try typing something else.")
+
+
 Chat()
+
+# print(TestMetric('test'))
+# 0.8372093023255814
